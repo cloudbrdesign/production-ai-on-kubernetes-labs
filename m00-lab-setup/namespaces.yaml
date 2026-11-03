@@ -1,0 +1,20 @@
+# One namespace per Meridale team.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: atlas
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: sentinel
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: assistant
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: nudge
