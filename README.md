@@ -1,23 +1,21 @@
 # Production AI on Kubernetes: course labs
 
-Lab files for the Cloud Brewery Academy course **Production AI on Kubernetes: Building Compliant Infrastructure for the Enterprise**. The course follows the platform team of Meridale Finance, a fictional consumer lender, as it builds a compliant platform for its AI systems. Each folder is one lab, with its own README and every file the lab uses.
+Lab files for the Cloud Brewery Academy course **Production AI on Kubernetes: Building Compliant Infrastructure for the Enterprise**. The course follows the platform team of Meridale Finance, a fictional consumer lender, as it builds a compliant platform for its AI systems. Labs are grouped in one folder per module; each lab folder has its own README and every file the lab uses.
 
 **Tested on macOS (Apple silicon MacBook).** Every lab was run on a MacBook with Apple silicon, and its README lists the exact versions we used. Other systems may work, but we haven't tested them.
 
 ## Labs
 
-| Lab | Lesson | What you do |
-|---|---|---|
-| [m00-lab-setup](m00-lab-setup/) | 0.13 Lab: setting up your lab environment | Create the kind cluster every later lab starts from (Kubernetes v1.37), a namespace per team, a Job and a Deployment + Service, delete a Pod and watch it come back, install Kueue with Helm |
-| [m01-l4-throughput](m01-l4-throughput/) | 1.8 Lab: measuring one L4 GPU | Optional, on AWS, under $1: launch one g6.xlarge (NVIDIA L4), serve a 7B model with vLLM, measure tokens per second at 1 to 64 requests at a time, delete everything. Our results are included |
-| [m01-cost-model](m01-cost-model/) | 1.9 Lab: Meridale's GPU cost model | Pull today's GPU prices from AWS (read-only), then a spreadsheet: cost per million tokens, GPUs needed, monthly bill, Spot vs on-demand, own hardware. Meridale's filled model and a blank template |
-| [m01-opencost](m01-opencost/) | 1.10 Lab: seeing cost in your cluster with OpenCost | Local, no cost: OpenCost on a kind cluster with two pretend GPUs; GPU cost per namespace and the idle GPU nobody asked for |
+Each module folder has a README listing its labs. Each lab folder works on its own.
 
-More labs are added as each module is released.
+| Module | Labs |
+|---|---|
+| [Module 0: Welcome to Meridale's platform team](module-00-welcome/) | [0.13 Setting up your lab environment](module-00-welcome/m00-lab-setup/) |
+| [Module 1: The business case](module-01-business-case/) | [1.8 Measuring one L4 GPU](module-01-business-case/m01-l4-throughput/) (AWS, under $1) · [1.9 Meridale's GPU cost model](module-01-business-case/m01-cost-model/) · [1.10 Seeing cost in your cluster with OpenCost](module-01-business-case/m01-opencost/) |
 
 ## What you need
 
-A Docker engine with about 8 GB of memory (we use Colima), kind, kubectl and Helm. `m00-lab-setup/check-tools.sh` checks them for you; the versions we tested are in `m00-lab-setup/README.md`.
+A Docker engine with about 8 GB of memory (we use Colima), kind, kubectl and Helm. `module-00-welcome/m00-lab-setup/check-tools.sh` checks them for you; the versions we tested are in each lab's README.
 
 The two AWS labs (`m01-l4-throughput`, and `get_prices.py` in `m01-cost-model`) also need Python 3, boto3 and an AWS account; each README says what it costs (the price pull is free) and what permissions it needs.
 

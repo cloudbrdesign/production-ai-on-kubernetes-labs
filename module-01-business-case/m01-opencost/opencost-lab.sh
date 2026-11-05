@@ -12,7 +12,7 @@
 # OpenCost prices and allocates them like real ones, but it can't measure how busy they are (no NVIDIA DCGM exporter).
 set -uo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
-SETUP="$HERE/../m00-lab-setup"
+SETUP="$HERE"   # kind-config.yaml and namespaces.yaml are copies of lab 0.13's, so this folder works on its own
 CLUSTER=m01-opencost
 CTX=kind-$CLUSTER
 GPU_NODE=$CLUSTER-worker

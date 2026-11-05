@@ -25,9 +25,10 @@ colima ssh -- sudo sysctl -w fs.inotify.max_user_instances=512 fs.inotify.max_us
 | `opencost-lab.sh` | `check`, `up`, `report`, `ui`, `down` |
 | `opencost-values.yaml` | OpenCost custom pricing: GPU $0.8048 per hour (one L4 on demand, AWS us-east-1, 5 Nov 2026, from lab 1.9); CPU, RAM and storage at OpenCost's defaults |
 | `meridale-workloads.yaml` | Ask Meridale (`assistant`) requests 1 GPU; Atlas data prep (`atlas`) requests CPU only |
+| `kind-config.yaml`, `namespaces.yaml` | The cluster and Meridale's team namespaces, same as lab 0.13 |
 | `our-results/` | Our recorded run of 5 Nov 2026: the transcript and OpenCost's answers. The transcript's report ends with a "per hour at this rate" line that was wrong (it divided by the whole window, but the GPU line covers only the minutes the workload ran); that line has since been removed from `opencost-lab.sh`. |
 
-`up` also uses `kind-config.yaml` and `namespaces.yaml` from `../m00-lab-setup`.
+`kind-config.yaml` and `namespaces.yaml` are copies of the ones from lab 0.13 (`m00-lab-setup`), so this folder works on its own.
 
 ## Steps
 

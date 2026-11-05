@@ -1,0 +1,11 @@
+# A three-node kind cluster for the course labs: one control plane, two workers.
+# Every node runs Kubernetes v1.37 (node image kindest/node:v1.37.0, from kind v0.33.0).
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+- role: control-plane
+  image: kindest/node:v1.37.0
+- role: worker
+  image: kindest/node:v1.37.0
+- role: worker
+  image: kindest/node:v1.37.0
