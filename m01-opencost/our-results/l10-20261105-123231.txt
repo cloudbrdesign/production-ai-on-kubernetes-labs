@@ -1,0 +1,152 @@
+run started 2026-11-05 08:32 UTC
+========== 1 up ==========
+$ bash opencost-lab.sh up
+== tools
+kind v0.33.0 go1.27.1 darwin/arm64
+Client Version: v1.37.1
+v4.3.1+gc0d08d0
+== Colima file-watch limit (kind known issue: 'too many open files')
+fs.inotify.max_user_instances = 512 (kind recommends 512)
+ok
+== 1 cluster
+Creating cluster "m01-opencost" ...
+ • Ensuring node image (kindest/node:v1.37.0) 🖼️  ...
+ ✓ Ensuring node image (kindest/node:v1.37.0) 🖼️
+ • Preparing nodes 📦 📦 📦   ...
+ ✓ Preparing nodes 📦 📦 📦 
+ • Writing configuration 📜  ...
+ ✓ Writing configuration 📜
+ • Starting control-plane 🕹️  ...
+ ✓ Starting control-plane 🕹️
+ • Installing CNI 🔌  ...
+ ✓ Installing CNI 🔌
+ • Installing StorageClass 💾  ...
+ ✓ Installing StorageClass 💾
+ • Joining worker nodes 🚜  ...
+ ✓ Joining worker nodes 🚜
+Set kubectl context to "kind-m01-opencost"
+You can now use your cluster with:
+kubectl cluster-info --context kind-m01-opencost
+Thanks for using kind! 😊
+$ kubectl -n kube-system wait --for=condition=Ready pod -l k8s-app=kube-proxy --timeout=120s
+pod/kube-proxy-4zqm2 condition met
+pod/kube-proxy-6twjc condition met
+pod/kube-proxy-jbptx condition met
+== 2 two pretend GPUs on m01-opencost-worker
+$ kubectl patch node m01-opencost-worker --subresource=status --type=json -p [{"op":"add","path":"/status/capacity/nvidia.com~1gpu","value":"2"}]
+node/m01-opencost-worker patched
+== 3 Prometheus (OpenCost docs command)
+NAME: prometheus
+LAST DEPLOYED: Thu Nov  5 12:33:07 2026
+NAMESPACE: prometheus-system
+STATUS: deployed
+REVISION: 1
+DESCRIPTION: Install complete
+TEST SUITE: None
+NOTES:
+The Prometheus server can be accessed via port 80 on the following DNS name from within your cluster:
+prometheus-server.prometheus-system.svc.cluster.local
+Get the Prometheus server URL by running these commands in the same shell:
+  export POD_NAME=$(kubectl get pods --namespace prometheus-system -l "app.kubernetes.io/name=prometheus,app.kubernetes.io/instance=prometheus" -o jsonpath="{.items[0].metadata.name}")
+  kubectl --namespace prometheus-system port-forward $POD_NAME 9090
+For more information on running Prometheus, visit:
+https://prometheus.io/
+== 4 OpenCost, with our prices
+# OpenCost Helm values for lab 1.10 (OpenCost docs: "Custom pricing using the OpenCost Helm Chart").
+# Prices are USD per hour: CPU per vCPU, RAM per GiB, GPU per GPU, storage per GiB.
+# GPU = one g6.xlarge (1x NVIDIA L4) on-demand, AWS us-east-1, pulled 5 Nov 2026 (lab 1.9). CPU, RAM and storage = OpenCost's defaults.
+opencost:
+  customPricing:
+    enabled: true
+    costModel:
+      description: Production AI on Kubernetes lab 1.10 (GPU = L4 on-demand, 5 Nov 2026)
+      CPU: 0.031611
+      RAM: 0.004237
+      GPU: 0.8048
+      storage: 0.00005479452
+$ kubectl create namespace opencost
+namespace/opencost created
+NAME: opencost
+LAST DEPLOYED: Thu Nov  5 12:33:11 2026
+NAMESPACE: opencost
+STATUS: deployed
+REVISION: 1
+DESCRIPTION: Install complete
+TEST SUITE: None
+NOTES:
+Thank you for installing the OpenCost Helm Chart!
+Your release is named: opencost
+To verify that OpenCost is running, execute the following commands:
+1. Check the status of the pods:
+   kubectl get pods -l app.kubernetes.io/instance=opencost -n opencost
+2. Access the OpenCost UI:
+   If the service is only accessible within the cluster, you can use port-forwarding:
+   export SVC_NAME=opencost
+   kubectl port-forward svc/$SVC_NAME 9090 -n opencost
+   Alternatively, you can port-forward directly to the OpenCost pod:
+   export POD_NAME=$(kubectl get pod -l app.kubernetes.io/instance=opencost -n opencost -o jsonpath="{.items[0].metadata.name}")
+   kubectl -n opencost port-forward $POD_NAME 9090
+For more information, visit the OpenCost documentation:
+https://www.opencost.io/docs/
+$ kubectl -n prometheus-system rollout status deploy/prometheus-server --timeout=300s
+Waiting for deployment "prometheus-server" rollout to finish: 0 of 1 updated replicas are available...
+deployment "prometheus-server" successfully rolled out
+$ kubectl -n opencost rollout status deploy/opencost --timeout=600s
+Waiting for deployment "opencost" rollout to finish: 0 of 1 updated replicas are available...
+deployment "opencost" successfully rolled out
+== 5 Meridale's workloads
+$ kubectl apply -f <course folder>/labs/m01-opencost/../m00-lab-setup/namespaces.yaml
+namespace/atlas created
+namespace/sentinel created
+namespace/assistant created
+namespace/nudge created
+$ kubectl apply -f <course folder>/labs/m01-opencost/meridale-workloads.yaml
+deployment.apps/ask-meridale created
+deployment.apps/atlas-prep created
+$ kubectl -n assistant rollout status deploy/ask-meridale --timeout=180s
+Waiting for deployment "ask-meridale" rollout to finish: 0 of 1 updated replicas are available...
+deployment "ask-meridale" successfully rolled out
+$ kubectl -n atlas rollout status deploy/atlas-prep --timeout=180s
+deployment "atlas-prep" successfully rolled out
+$ kubectl get node m01-opencost-worker -o jsonpath={"nvidia.com/gpu allocatable: "}{.status.allocatable.nvidia\.com/gpu}{"\n"}
+nvidia.com/gpu allocatable: 2
+  nvidia.com/gpu     1           1
+Up. Give Prometheus and OpenCost about 15 minutes to collect, then: bash opencost-lab.sh report
+(step took 147s)
+========== 2 wait ==========
+waited 5 min
+waited 10 min
+waited 15 min
+(step took 900s)
+========== 3 report ==========
+$ bash opencost-lab.sh report
+== OpenCost: GPUs and GPU price per node
+node_gpu_count m01-opencost-control-plane 0
+node_gpu_count m01-opencost-worker 2
+node_gpu_count m01-opencost-worker2 0
+node_gpu_hourly_cost m01-opencost-control-plane 0
+node_gpu_hourly_cost m01-opencost-worker 0.8048
+node_gpu_hourly_cost m01-opencost-worker2 0
+== OpenCost: cost by namespace, last 15m, with idle
+$ curl 'localhost:9003/allocation/compute?window=15m&aggregate=namespace&includeIdle=true'
+window measured: 14 minutes
+namespace          GPU-hours    GPU $    CPU $    RAM $  total $  share of GPU $
+__idle__              0.0000   0.1341   0.0505   0.0148   0.1995            50%
+assistant             0.1667   0.1341   0.0026   0.0003   0.1371            50%
+kube-system           0.0000   0.0000   0.0085   0.0008   0.0092             0%
+atlas                 0.0000   0.0000   0.0013   0.0002   0.0015             0%
+prometheus-system     0.0000   0.0000   0.0001   0.0002   0.0004             0%
+opencost              0.0000   0.0000   0.0001   0.0001   0.0003             0%
+local-path-storage    0.0000   0.0000   0.0000   0.0000   0.0000             0%
+GPU cost in the window: $0.2683; per hour at this rate: $1.1497
+opencost-lab.sh: line 68: 80326 Terminated: 15          kubectl --context "$CTX" -n opencost port-forward service/opencost 9003 > /dev/null 2>&1
+Saved: <course folder>/labs/m01-opencost/runs/opencost-20261105-124958-allocation.json and <course folder>/labs/m01-opencost/runs/opencost-20261105-124958-assets.json
+(step took 4s)
+========== 4 down ==========
+$ bash opencost-lab.sh down
+Deleting cluster "m01-opencost" ...
+Deleted nodes: ["m01-opencost-worker2" "m01-opencost-control-plane" "m01-opencost-worker"]
+(step took 2s)
+========== end ==========
+total 1053s
+Saved: <course folder>/production/runs/m01-l10/runs/l10-20261105-123231.log

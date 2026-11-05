@@ -1,0 +1,32 @@
+# Two of Meridale's workloads for lab 1.10. The containers do nothing (pause image); what matters is what they request.
+# Ask Meridale asks for one GPU; Atlas data prep asks for CPU only. The namespaces come from lab 0.13 (namespaces.yaml).
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: ask-meridale, namespace: assistant}
+spec:
+  replicas: 1
+  selector: {matchLabels: {app: ask-meridale}}
+  template:
+    metadata: {labels: {app: ask-meridale}}
+    spec:
+      containers:
+      - name: server
+        image: registry.k8s.io/pause:3.10
+        resources:
+          requests: {cpu: 500m, memory: 512Mi, nvidia.com/gpu: 1}
+          limits: {nvidia.com/gpu: 1}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: atlas-prep, namespace: atlas}
+spec:
+  replicas: 1
+  selector: {matchLabels: {app: atlas-prep}}
+  template:
+    metadata: {labels: {app: atlas-prep}}
+    spec:
+      containers:
+      - name: prep
+        image: registry.k8s.io/pause:3.10
+        resources:
+          requests: {cpu: 250m, memory: 256Mi}

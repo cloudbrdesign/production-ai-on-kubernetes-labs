@@ -1,0 +1,95 @@
+region=us-east-1 instance_type=g6.xlarge
+START
+gpu=NVIDIA L4, 23034 MiB, 72.00 W
+driver=595.112.07
+os=Ubuntu 22.04.5 LTS
+docker=29.9.2
+vllm_image=vllm/vllm-openai:v0.32.0 digest=vllm/vllm-openai@sha256:befccf0e7e4089aa23926bb6f887a85c0d46c2a99e6de5c5ffdf5cb7957c5b34 pulled_after=414s
+server_ready model=Qwen/Qwen2.5-7B-Instruct max_model_len=4096 after=839s
+version| 0.32.0
+kv| (EngineCore pid=90) INFO 10-30 05:49:19 [gpu_worker.py:759] Available KV cache memory: 3.87 GiB
+kv| (EngineCore pid=90) INFO 10-30 05:49:19 [gpu_worker.py:774] CUDA graph memory profiling is enabled (default since v0.21.0). The current --gpu-memory-utilization=0.9000 is equivalent to --gpu-memory-utilization=0.8820 without CUDA graph memory profiling. To maintain the same effective KV cache size as before, increase --gpu-memory-utilization to 0.9180. To disable, set VLLM_MEMORY_PROFILER_ESTIMATE_CUDAGRAPHS=0.
+kv| (EngineCore pid=90) INFO 10-30 05:49:19 [kv_cache_utils.py:2327] GPU KV cache size: 72,448 tokens, Maximum concurrency for 4,096 tokens per request: 17.69x
+kv| (EngineCore pid=90) INFO 10-30 05:49:31 [gpu_worker.py:1034] Free memory on device (21.85/22.04 GiB) on startup. Desired GPU memory utilization is (0.9, 19.83 GiB). Actual usage is 14.53 GiB for consumed memory (weights + non-torch), 1.43 GiB for peak activation, and 0.24 GiB for CUDAGraph memory. Replace gpu_memory_utilization config with `--kv-cache-memory=3737877197` (3.48 GiB) to fit into requested memory, or `--kv-cache-memory=5900578304` (5.5 GiB) to fully utilize gpu memory. Current kv cache memory in use is 3.87 GiB.
+kv| (EngineCore pid=90) INFO 10-30 05:49:40 [core.py:395] init engine (profile, create kv cache, warmup model) took 80.74 s (compilation: 22.14 s)
+gpu_mem_after_load=19512 MiB, 23034 MiB
+bench_extra_flags= input_len=512 output_len=256
+C=1 prompts=32 avg_power_W=71 avg_util_pct=97 samples=481
+C=1| Successful requests:                     32
+C=1| Failed requests:                         0
+C=1| Benchmark duration (s):                  468.57
+C=1| Request throughput (req/s):              0.07
+C=1| Output token throughput (tok/s):         17.48
+C=1| Total token throughput (tok/s):          52.45
+C=1| Mean TTFT (ms):                          164.18
+C=1| P99 TTFT (ms):                           173.20
+C=1| Mean TPOT (ms):                          56.78
+C=1| P99 TPOT (ms):                           56.87
+C=1| Mean ITL (ms):                           56.78
+C=1| P99 ITL (ms):                            57.56
+C=4 prompts=32 avg_power_W=69 avg_util_pct=91 samples=137
+C=4| Successful requests:                     32
+C=4| Failed requests:                         0
+C=4| Benchmark duration (s):                  124.63
+C=4| Request throughput (req/s):              0.26
+C=4| Output token throughput (tok/s):         65.73
+C=4| Total token throughput (tok/s):          197.19
+C=4| Mean TTFT (ms):                          489.59
+C=4| P99 TTFT (ms):                           671.27
+C=4| Mean TPOT (ms):                          59.14
+C=4| P99 TPOT (ms):                           60.15
+C=4| Mean ITL (ms):                           59.14
+C=4| P99 ITL (ms):                            59.48
+C=8 prompts=32 avg_power_W=66 avg_util_pct=85 samples=78
+C=8| Successful requests:                     32
+C=8| Failed requests:                         0
+C=8| Benchmark duration (s):                  65.48
+C=8| Request throughput (req/s):              0.49
+C=8| Output token throughput (tok/s):         125.11
+C=8| Total token throughput (tok/s):          375.34
+C=8| Mean TTFT (ms):                          857.74
+C=8| P99 TTFT (ms):                           1196.65
+C=8| Mean TPOT (ms):                          60.74
+C=8| P99 TPOT (ms):                           63.24
+C=8| Mean ITL (ms):                           60.74
+C=8| P99 ITL (ms):                            60.47
+C=16 prompts=64 avg_power_W=67 avg_util_pct=86 samples=84
+C=16| Successful requests:                     64
+C=16| Failed requests:                         0
+C=16| Benchmark duration (s):                  71.41
+C=16| Request throughput (req/s):              0.90
+C=16| Output token throughput (tok/s):         229.42
+C=16| Total token throughput (tok/s):          688.27
+C=16| Mean TTFT (ms):                          1275.29
+C=16| P99 TTFT (ms):                           2260.03
+C=16| Mean TPOT (ms):                          64.88
+C=16| P99 TPOT (ms):                           68.70
+C=16| Mean ITL (ms):                           64.88
+C=16| P99 ITL (ms):                            196.35
+C=32 prompts=128 avg_power_W=67 avg_util_pct=87 samples=99
+C=32| Successful requests:                     128
+C=32| Failed requests:                         0
+C=32| Benchmark duration (s):                  86.23
+C=32| Request throughput (req/s):              1.48
+C=32| Output token throughput (tok/s):         380.02
+C=32| Total token throughput (tok/s):          1140.07
+C=32| Mean TTFT (ms):                          1743.10
+C=32| P99 TTFT (ms):                           4346.83
+C=32| Mean TPOT (ms):                          77.45
+C=32| P99 TPOT (ms):                           82.93
+C=32| Mean ITL (ms):                           77.45
+C=32| P99 ITL (ms):                            528.69
+C=64 prompts=256 avg_power_W=68 avg_util_pct=90 samples=125
+C=64| Successful requests:                     256
+C=64| Failed requests:                         0
+C=64| Benchmark duration (s):                  111.96
+C=64| Request throughput (req/s):              2.29
+C=64| Output token throughput (tok/s):         585.34
+C=64| Total token throughput (tok/s):          1756.02
+C=64| Mean TTFT (ms):                          2513.45
+C=64| P99 TTFT (ms):                           9122.11
+C=64| Mean TPOT (ms):                          99.40
+C=64| P99 TPOT (ms):                           106.79
+C=64| Mean ITL (ms):                           99.40
+C=64| P99 ITL (ms):                            570.26
+DONE after=1877s

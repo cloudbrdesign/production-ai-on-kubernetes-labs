@@ -1,0 +1,37 @@
+prices pulled 2026-11-05 03:41 UTC · region us-east-1 · Linux, shared tenancy · USD per instance-hour
+
+== g6.xlarge
+on-demand: 0.8048
+spot us-east-1a: 0.4374
+spot us-east-1b: 0.6355
+spot us-east-1c: 0.4785
+spot us-east-1d: 0.6317
+spot us-east-1f: 0.7764
+savings plan Compute 1yr no-upfront: 0.6549
+savings plan Compute 3yr no-upfront: 0.4617
+savings plan EC2Instance 1yr no-upfront: 0.5239
+savings plan EC2Instance 3yr no-upfront: 0.3694
+
+== p4d.24xlarge
+on-demand: 21.9576, 0.0000
+spot us-east-1a: 18.4713
+spot us-east-1b: 17.2078
+spot us-east-1c: 21.1825
+spot us-east-1d: 17.4334
+savings plan Compute 1yr no-upfront: 16.7053
+savings plan Compute 3yr no-upfront: 14.9988
+savings plan EC2Instance 1yr no-upfront: 13.9211
+savings plan EC2Instance 3yr no-upfront: 9.3742
+
+== p5.48xlarge
+on-demand: 55.0400, 0.0000
+spot us-east-1a: 37.3777
+spot us-east-1b: 20.8468
+spot us-east-1c: 37.3777
+spot us-east-1d: 34.8890
+spot us-east-1e: 32.3258
+spot us-east-1f: 34.2067
+savings plan Compute 1yr no-upfront: 43.3440
+savings plan Compute 3yr no-upfront: 40.4214
+savings plan EC2Instance 1yr no-upfront: 34.6752
+savings plan EC2Instance 3yr no-upfront: 23.7773

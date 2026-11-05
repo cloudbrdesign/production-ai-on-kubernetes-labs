@@ -1,0 +1,12 @@
+# OpenCost Helm values for lab 1.10 (OpenCost docs: "Custom pricing using the OpenCost Helm Chart").
+# Prices are USD per hour: CPU per vCPU, RAM per GiB, GPU per GPU, storage per GiB.
+# GPU = one g6.xlarge (1x NVIDIA L4) on-demand, AWS us-east-1, pulled 5 Nov 2026 (lab 1.9). CPU, RAM and storage = OpenCost's defaults.
+opencost:
+  customPricing:
+    enabled: true
+    costModel:
+      description: Production AI on Kubernetes lab 1.10 (GPU = L4 on-demand, 5 Nov 2026)
+      CPU: 0.031611
+      RAM: 0.004237
+      GPU: 0.8048
+      storage: 0.00005479452

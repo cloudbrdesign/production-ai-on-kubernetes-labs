@@ -1,0 +1,142 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >-
+  Production AI on Kubernetes, Module 1: measure LLM serving throughput on one NVIDIA L4.
+  One GPU instance runs vLLM in Docker, benchmarks it with `vllm bench serve` at several
+  concurrency levels, and prints the results to the instance console. The instance
+  terminates itself after MaxMinutes. Delete this stack when you are done (python aws/l4_throughput.py down).
+
+Parameters:
+  ImageId:
+    Type: AWS::EC2::Image::Id
+    Description: Deep Learning Base GPU AMI (l4_throughput.py resolves it from its public SSM parameter)
+  InstanceType:
+    Type: String
+    Default: g6.xlarge
+  MaxMinutes:
+    Type: Number
+    Default: 55
+    MinValue: 10
+    MaxValue: 55
+    Description: Minutes after boot before the instance terminates itself
+  RootDeviceName:
+    Type: String
+    Default: /dev/sda1
+  SubnetId:
+    Type: AWS::EC2::Subnet::Id
+  VllmImage:
+    Type: String
+    Default: vllm/vllm-openai:v0.32.0
+  Model:
+    Type: String
+    Default: Qwen/Qwen2.5-7B-Instruct
+  MaxModelLen:
+    Type: Number
+    Default: 4096
+  InputLen:
+    Type: Number
+    Default: 512
+  OutputLen:
+    Type: Number
+    Default: 256
+  Concurrencies:
+    Type: String
+    Default: "1 4 8 16 32 64"
+
+Resources:
+  LabSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Production AI on Kubernetes m01 - no inbound access
+      Tags:
+        - {Key: Project, Value: prod-ai-k8s-course}
+
+  LabLaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateData:
+        ImageId: !Ref ImageId
+        InstanceType: !Ref InstanceType
+        InstanceInitiatedShutdownBehavior: terminate
+        BlockDeviceMappings:
+          - DeviceName: !Ref RootDeviceName
+            Ebs: {VolumeSize: 150, VolumeType: gp3, DeleteOnTermination: true}
+        SecurityGroupIds:
+          - !GetAtt LabSecurityGroup.GroupId
+        MetadataOptions:
+          HttpTokens: required
+        TagSpecifications:
+          - ResourceType: instance
+            Tags:
+              - {Key: Project, Value: prod-ai-k8s-course}
+              - {Key: Name, Value: prod-ai-k8s-m01-throughput}
+          - ResourceType: volume
+            Tags:
+              - {Key: Project, Value: prod-ai-k8s-course}
+        UserData:
+          Fn::Base64: !Sub |
+            #!/bin/bash
+            # Hard time limit first, so it applies even if a later step fails (and again on every boot).
+            mkdir -p /var/lib/cloud/scripts/per-boot
+            printf '#!/bin/bash\nshutdown -h +${MaxMinutes} "m01 time limit reached"\n' > /var/lib/cloud/scripts/per-boot/m01-time-limit.sh
+            chmod +x /var/lib/cloud/scripts/per-boot/m01-time-limit.sh
+            /var/lib/cloud/scripts/per-boot/m01-time-limit.sh
+            export HOME=/root
+            T0=$(date +%s)
+            log()  { echo "M01| $*" | tee -a /root/m01.log > /dev/console; }
+            logc() { tag=$1; shift; "$@" 2>&1 | while IFS= read -r l; do log "$tag| $l"; done; }
+            el()   { echo $(( $(date +%s) - T0 ))s; }
+            log "START"
+            log "gpu=$(nvidia-smi --query-gpu=name,memory.total,power.limit --format=csv,noheader 2>&1)"
+            log "driver=$(nvidia-smi --query-gpu=driver_version --format=csv,noheader 2>&1)"
+            log "os=$(. /etc/os-release && echo $PRETTY_NAME)"
+            log "docker=$(docker version --format '{{.Server.Version}}' 2>&1)"
+
+            # 1. Pull the pinned vLLM image
+            if ! docker pull ${VllmImage} > /root/pull.log 2>&1; then log "pull=FAILED $(tail -c 300 /root/pull.log)"; log "DONE after=$(el)"; exit 0; fi
+            log "vllm_image=${VllmImage} digest=$(docker inspect --format '{{index .RepoDigests 0}}' ${VllmImage}) pulled_after=$(el)"
+
+            # 2. Start the server (weights download from Hugging Face on first start)
+            mkdir -p /root/hf /root/results
+            docker run -d --name vllm --gpus all --ipc=host -p 8000:8000 \
+              -v /root/hf:/root/.cache/huggingface \
+              ${VllmImage} --model ${Model} --max-model-len ${MaxModelLen} --gpu-memory-utilization 0.90 > /root/run.log 2>&1
+            for i in $(seq 1 180); do curl -sf localhost:8000/health > /dev/null && break; sleep 5; done
+            if ! curl -sf localhost:8000/health > /dev/null; then logc server_tail sh -c "docker logs vllm 2>&1 | tail -25"; log "DONE after=$(el)"; exit 0; fi
+            log "server_ready model=${Model} max_model_len=${MaxModelLen} after=$(el)"
+            logc version docker exec vllm vllm --version
+            logc kv sh -c "docker logs vllm 2>&1 | grep -iE 'KV cache|maximum concurrency|model weights took|Loading weights took' | tail -5"
+            log "gpu_mem_after_load=$(nvidia-smi --query-gpu=memory.used,memory.total --format=csv,noheader)"
+
+            # 3. Benchmark: same synthetic workload at each concurrency, a new seed each run (avoids prefix-cache reuse)
+            EXTRA=""
+            docker exec vllm vllm bench serve --help > /root/bench-help.txt 2>&1
+            grep -q -- '--ignore-eos' /root/bench-help.txt && EXTRA="--ignore-eos"
+            log "bench_extra_flags=$EXTRA input_len=${InputLen} output_len=${OutputLen}"
+            SEED=1
+            for C in ${Concurrencies}; do
+              N=$(( C * 4 )); [ $N -lt 32 ] && N=32
+              nvidia-smi --query-gpu=power.draw,utilization.gpu,memory.used --format=csv,noheader,nounits -lms 1000 > /root/results/smi-c$C.csv &
+              SMI=$!
+              docker exec vllm vllm bench serve --backend vllm --model ${Model} --endpoint /v1/completions \
+                --dataset-name random --random-input-len ${InputLen} --random-output-len ${OutputLen} \
+                --num-prompts $N --max-concurrency $C --seed $SEED $EXTRA \
+                --save-result --result-dir /tmp/res --result-filename c$C.json > /root/results/bench-c$C.txt 2>&1
+              kill $SMI
+              SEED=$(( SEED + 1 ))
+              awk -F', ' '{p+=$1; u+=$2; n++} END {if(n) printf "avg_power_W=%.0f avg_util_pct=%.0f samples=%d\n", p/n, u/n, n}' /root/results/smi-c$C.csv > /root/results/smi-c$C.sum
+              log "C=$C prompts=$N $(cat /root/results/smi-c$C.sum)"
+              logc "C=$C" sh -c "grep -E 'Successful requests|Failed requests|Benchmark duration|Output token throughput|Total token throughput|Request throughput|Mean TTFT|P99 TTFT|Mean TPOT|P99 TPOT|Mean ITL|P99 ITL' /root/results/bench-c$C.txt"
+            done
+            log "DONE after=$(el)"
+
+  LabInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      LaunchTemplate:
+        LaunchTemplateId: !Ref LabLaunchTemplate
+        Version: !GetAtt LabLaunchTemplate.LatestVersionNumber
+      SubnetId: !Ref SubnetId
+
+Outputs:
+  InstanceId:
+    Value: !Ref LabInstance
